@@ -46,7 +46,6 @@ class Docker:
         dumped = json.dumps(
             {"serveraddress": self.registry_address, **registry_credentials}
         )
-        print(dumped)
 
         return b64encode(dumped.encode()).decode()
 
