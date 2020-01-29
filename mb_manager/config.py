@@ -16,7 +16,11 @@ CONFIG_FORMAT = {
     "manager": {"host": str, "port": int},
     "docker": {
         "socket": str,
-        "registry": {"serveraddress": str, "username": str, "password": str},
+        "registry": {
+            "address": str,
+            "manager": {"username": str, "password": str},
+            "worker": {"username": str, "password": str},
+        },
     },
     "edgedb": {
         "host": str,

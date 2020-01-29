@@ -26,19 +26,12 @@ class DockerException(Exception):
 
 class Docker:
     def __init__(
-        self,
-        *,
-        session: aiohttp.ClientSession,
-        registry_credentials: Mapping[str, Any] = {},
-        **kwargs: Any,
+        self, *, session: aiohttp.ClientSession, registry_address: str, **kwargs: Any,
     ):
         self._session = session
+        self.registry_address = registry_address
 
         self._url_base = f"unix://{DOCKER_API_VERSION}"
-
-        self._registry_auth_header = self._make_registry_auth_header(
-            registry_credentials
-        )
 
     # Looks like gitlab does not support IdentityToken yet
     #
@@ -47,34 +40,26 @@ class Docker:
     #
     #     return response["IdentityToken"]
 
-    @staticmethod
-    def _make_registry_auth_header(registry_credentials: Mapping[str, Any]) -> str:
-        if not registry_credentials:
-            return ""
+    def _make_registry_auth_header(
+        self, registry_credentials: Mapping[str, Any]
+    ) -> str:
+        dumped = json.dumps(
+            {"serveraddress": self.registry_address, **registry_credentials}
+        )
+        print(dumped)
 
-        return b64encode(json.dumps(registry_credentials).encode()).decode()
+        return b64encode(dumped.encode()).decode()
 
     @classmethod
-    async def connect(
-        cls, *, socket: str, registry_credentials: Mapping[str, Any], **kwargs: Any
-    ) -> Docker:
+    async def connect(cls, *, socket: str, **kwargs: Any) -> Docker:
         # TODO: support for other connectors?
         session = aiohttp.ClientSession(connector=aiohttp.UnixConnector(path=socket))
 
-        docker = Docker(
-            session=session, registry_credentials=registry_credentials, **kwargs
-        )
-        if registry_credentials:
-            await docker._test_registry_auth(registry_credentials)
+        docker = Docker(session=session, **kwargs)
 
         # docker._token = await docker._registry_authorize(registry_credentials)
 
         return docker
-
-    async def _test_registry_auth(
-        self, registry_credentials: Mapping[str, Any]
-    ) -> None:
-        await self.request("POST", "auth", body=registry_credentials)
 
     @staticmethod
     async def _read_response(resp: aiohttp.ClientResponse) -> Any:
@@ -91,14 +76,16 @@ class Docker:
         path: str = "",
         params: Mapping[str, Any] = {},
         body: Any = None,
-        auth: bool = False,
+        registry_credentials: Mapping[str, Any] = {},
     ) -> Any:
-        url = f"{self._url_base}/{path}"
+        url = f"{self._url_base}{path}"
         log.info("%6s: %s", method, url)
 
         headers = {}
-        if auth:
-            headers["X-Registry-Auth"] = self._registry_auth_header
+        if registry_credentials:
+            headers["X-Registry-Auth"] = self._make_registry_auth_header(
+                registry_credentials
+            )
 
         async with self._session.request(
             method, url, params=params, json=body, headers=headers
@@ -123,13 +110,21 @@ class Docker:
 
             return decoded
 
-    async def pull(self, image: str, tag: str = "latest") -> None:
+    async def pull(
+        self,
+        image: str,
+        tag: str = "latest",
+        registry_credentials: Mapping[str, Any] = {},
+    ) -> None:
         await self.request(
-            "POST", "images/create", params=dict(fromImage=image, tag=tag,), auth=True,
+            "POST",
+            "/images/create",
+            params=dict(fromImage=image, tag=tag,),
+            registry_credentials=registry_credentials,
         )
 
     async def restart(self, name: str) -> None:
-        await self.request("POST", f"containers/{name}/restart")
+        await self.request("POST", f"/containers/{name}/restart")
 
     async def close(self) -> None:
         await self._session.close()
@@ -140,7 +135,8 @@ async def _connect(app: aiohttp.web.Application) -> None:
 
     docker_config = app["config"]["docker"]
     app["docker"] = await Docker.connect(
-        socket=docker_config["socket"], registry_credentials=docker_config["registry"]
+        socket=docker_config["socket"],
+        registry_address=docker_config["registry"]["address"],
     )
     app["docker_ready"].set()
 

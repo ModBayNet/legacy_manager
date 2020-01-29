@@ -9,9 +9,9 @@ log = logging.getLogger(__name__)
 
 routes = web.RouteTableDef()
 
-# TODO: avoid hardcoding these
-MANAGER_DOCKER_IMAGE = "registry.gitlab.com/modbay1/manager"
-WORKER_DOCKER_IMAGE = "registry.gitlab.com/modbay1/backend"
+PROJECT_NAME = "modbay1"
+MANAGER_DOCKER_IMAGE = f"{PROJECT_NAME}/manager"
+WORKER_DOCKER_IMAGE = f"{PROJECT_NAME}/backend"
 
 MANAGER_CONTAINER_NAME = "modbay-manager.service"
 WORKER_CONTAINER_NAME = "modbay-backend.service"
@@ -65,7 +65,10 @@ async def update_self(req: web.Request) -> None:
 
     docker = req.config_dict["docker"]
 
-    await docker.pull(MANAGER_DOCKER_IMAGE)
+    await docker.pull(
+        f"{docker.registry_address}/{MANAGER_DOCKER_IMAGE}",
+        registry_credentials=req.config_dict["config"]["docker"]["registry"]["manager"],
+    )
     await req.config_dict["shutdown_handler"]()
 
 
@@ -74,5 +77,8 @@ async def update_worker(req: web.Request) -> None:
 
     docker = req.config_dict["docker"]
 
-    await docker.pull(WORKER_DOCKER_IMAGE)
-    await docker.restart(MANAGER_CONTAINER_NAME)
+    await docker.pull(
+        f"{docker.registry_address}/{WORKER_DOCKER_IMAGE}",
+        registry_credentials=req.config_dict["config"]["docker"]["registry"]["worker"],
+    )
+    await docker.restart(WORKER_CONTAINER_NAME)
