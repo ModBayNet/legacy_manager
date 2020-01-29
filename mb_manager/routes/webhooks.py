@@ -36,7 +36,6 @@ def _validate_request(req: web.Request) -> None:
 
 @routes.post("/wh/gitlab/manager")
 async def gitlab_manager_wh(req: web.Request) -> web.Response:
-    asyncio.create_task(update_self(req))
     _validate_request(req)
 
     hook_data = await req.json()
@@ -49,7 +48,6 @@ async def gitlab_manager_wh(req: web.Request) -> web.Response:
 
 @routes.post("/wh/gitlab/backend")
 async def gitlab_backend_wh(req: web.Request) -> web.Response:
-    asyncio.create_task(update_worker(req))
     _validate_request(req)
 
     hook_data = await req.json()
