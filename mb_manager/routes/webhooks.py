@@ -46,7 +46,7 @@ async def gitlab_manager_wh(req: web.Request) -> web.Response:
     return web.Response()
 
 
-@routes.post("/wh/gitlab/backend")
+@routes.post("/wh/gitlab/worker")
 async def gitlab_backend_wh(req: web.Request) -> web.Response:
     _validate_request(req)
 
