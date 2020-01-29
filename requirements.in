@@ -1,0 +1,5 @@
+aiohttp
+ruamel.yaml
+sentry-sdk
+uvloop
+edgedb==0.7.0a9

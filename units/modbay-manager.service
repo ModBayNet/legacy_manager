@@ -1,0 +1,19 @@
+[Unit]
+Description=Container for ModBay manager
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutStartSec=0
+Restart=always
+User=modbay
+ExecStartPre=-/bin/docker stop %n
+ExecStartPre=-/bin/docker rm %n
+ExecStartPre=/bin/docker pull registry.gitlab.com/modbay1/manager
+ExecStart=/bin/docker run --name %n --rm \
+                          -v /home/modbay/manager/config.yaml:/code/config.yaml \
+                          -p 127.0.0.1:8081:8081 --user root \
+			                    registry.gitlab.com/modbay1/manager -v debug
+
+[Install]
+WantedBy=multi-user.target
