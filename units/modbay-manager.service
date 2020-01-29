@@ -11,7 +11,7 @@ ExecStartPre=-/bin/docker stop %n
 ExecStartPre=-/bin/docker rm %n
 ExecStartPre=/bin/docker pull registry.gitlab.com/modbay1/manager
 ExecStart=/bin/docker run --name %n --rm \
-                          -v /home/modbay/manager/config.yaml:/code/config.yaml \
+                          -v /home/modbay/manager_config.yaml:/code/config.yaml \
                           -v /var/run/docker.sock:/var/run/docker.sock \
                           -p 127.0.0.1:8081:8081 --user root \
 			                    registry.gitlab.com/modbay1/manager -v debug
