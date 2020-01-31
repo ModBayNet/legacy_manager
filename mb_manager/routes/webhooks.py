@@ -79,4 +79,11 @@ async def update_worker(req: web.Request) -> None:
         f"{docker.registry_address}/{WORKER_DOCKER_IMAGE}",
         registry_credentials=req.config_dict["config"]["docker"]["registry"]["worker"],
     )
-    await docker.restart(WORKER_CONTAINER_NAME)
+
+    try:
+        await docker.restart(WORKER_CONTAINER_NAME)
+    except DockerException as e:
+        if e.status != 404:
+            raise
+
+        log.error("worker container is not running")
