@@ -3,7 +3,7 @@ import logging
 
 from aiohttp import web
 
-from ..docker import Docker
+from ..docker import Docker, DockerException
 
 log = logging.getLogger(__name__)
 
@@ -11,10 +11,10 @@ routes = web.RouteTableDef()
 
 PROJECT_NAME = "modbay1"
 MANAGER_DOCKER_IMAGE = f"{PROJECT_NAME}/manager"
-WORKER_DOCKER_IMAGE = f"{PROJECT_NAME}/backend"
+WORKER_DOCKER_IMAGE = f"{PROJECT_NAME}/worker"
 
 MANAGER_CONTAINER_NAME = "modbay-manager.service"
-WORKER_CONTAINER_NAME = "modbay-backend.service"
+WORKER_CONTAINER_NAME = "modbay-worker.service"
 
 
 def _validate_request(req: web.Request) -> None:

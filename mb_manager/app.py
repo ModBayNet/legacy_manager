@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 SHUTDOWN_DELAY = 5
 
 # TODO: remove duplicate, do not hardcode this
-WORKER_DOCKER_IMAGE = "modbay1/backend"
+WORKER_DOCKER_IMAGE = "modbay1/worker"
 
 
 class AccessLogger(AbstractAccessLogger):
