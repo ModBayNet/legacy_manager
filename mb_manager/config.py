@@ -14,6 +14,7 @@ DEFAULT_FILENAME = "config.yaml"
 
 CONFIG_FORMAT = {
     "manager": {"host": str, "port": int},
+    "supervisor": {"healthcheck_url": str},
     "docker": {
         "socket": str,
         "registry": {

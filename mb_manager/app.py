@@ -3,6 +3,7 @@ import logging
 from aiohttp import web
 from aiohttp.abc import AbstractAccessLogger
 
+from .tasks import setup as setup_tasks
 from .config import Config
 from .docker import setup as setup_docker
 from .routes import setup as setup_routes
@@ -52,6 +53,8 @@ def init_app(app: web.Application) -> None:
 
     setup_docker(app)
     setup_edgedb(app)
+
+    setup_tasks(app)
 
     app.on_startup.append(on_startup)
 
