@@ -1,0 +1,34 @@
+manager:
+  host: 0.0.0.0
+  port: 8081
+
+supervisor:
+  healthcheck_url: https://example.com/api/healthcheck
+
+docker:
+  socket: /var/run/docker.sock
+  registry:
+    address: registry.gitlab.com
+
+    manager:
+      username: !env DOCKER_REGISTRY_MANAGER_USERNAME
+      password: !env DOCKER_REGISTRY_MANAGER_PASSWORD
+    worker:
+      username: !env DOCKER_REGISTRY_WORKER_USERNAME
+      password: !env DOCKER_REGISTRY_WORKER_PASSWORD
+
+edgedb:
+  host: 127.0.0.1
+  port: 5656
+  user: !env MODBAY_EDGEDB_USER
+  database: !env MODBAY_EDGEDB_DATABASE
+  password: !env MODBAY_EDGEDB_PASSWORD
+
+sentry:
+  enabled: false
+  debug: false
+  dsn: !env MODBAY_SENTRY_DSN
+
+webhooks:
+  gitlab:
+    secret: !env MODBAY_GITLAB_WEBHOOK_SECRET
