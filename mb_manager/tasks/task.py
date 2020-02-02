@@ -68,6 +68,9 @@ class BaseTask(metaclass=Task):
             await instance.stop()
 
     async def cancel(self) -> None:
+        if self._cancelled:
+            return
+
         self._cancelled = True
 
         await self.stop()
