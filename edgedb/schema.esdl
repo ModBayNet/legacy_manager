@@ -3,23 +3,13 @@ module default {
         required property schema_version -> int16;
     }
 
-    abstract type Authored {
-        required link author -> User;
-    }
-
-    abstract type Datable {
-        required property created_at -> datetime {
-            default := datetime_current();
-            readonly := true;
+    type User {
+        required property nickname -> str {
+            constraint exclusive;
+            constraint min_len_value(5);
+            constraint max_len_value(12);
+            constraint regexp(r'[a-zA-Z\d]([a-zA-Z\d]|-(?=[a-zA-Z\d])){3,11}');
         };
-    }
-
-    abstract type Editable {
-        property edited_at -> datetime;
-    }
-
-    type User extending Datable, Editable {
-        required property nickname -> qualified_name;
 
         required property email -> str {
             constraint exclusive;
@@ -33,6 +23,12 @@ module default {
 
         required property password -> bytes;
         required property avatar -> str;
+        required property created_at -> datetime {
+            default := datetime_current();
+            readonly := true;
+        };
+
+        property edited_at -> datetime;
 
         property bio -> str;
 
@@ -48,9 +44,11 @@ module default {
         index on (__subject__.email);
     }
 
-    type GlobalRole extending Datable, Editable {
-        required property name -> qualified_name;
-
+    type GlobalRole {
+        required property name -> str {
+            constraint exclusive;
+            constraint max_len_value(12);
+        };
         required property site_admin -> bool;
 
         required property can_like -> bool;
@@ -61,7 +59,7 @@ module default {
     }
 
     # TODO: reason enum
-    type GlobalBan extending Datable, Authored {
+    type GlobalBan {
         required link user -> User;
 
         property comment -> str {
@@ -71,16 +69,30 @@ module default {
         required property until -> datetime;
     }
 
-    type Team extending Datable, Editable {
-        required property name -> qualified_name;
+    type Team {
+        required property name -> str {
+            constraint exclusive;
+            constraint min_len_value(5);
+            constraint max_len_value(12);
+            constraint regexp(r'[a-zA-Z\d]([a-zA-Z\d]|-(?=[a-zA-Z\d])){3,11}');
+        };
+
         required property avatar -> str;
 
         multi link members -> User;
 
+        required property created_at -> datetime {
+            default := datetime_current();
+            readonly := true;
+        };
+
+        property edited_at -> datetime;
+
         index on (str_lower(__subject__.name));
     }
 
-    type Comment extending Authored, Datable, Editable {
+    type Comment {
+        required link author -> User;
         required link article -> Article;
 
         link parent -> Comment;
@@ -101,7 +113,8 @@ module default {
     }
 
     # TODO: title, body
-    type Article extending Authored, Datable, Editable {
+    type Article {
+        link author -> User;
         link team -> Team;
 
         required property language -> str {
@@ -120,38 +133,43 @@ module default {
         };
     }
 
-    type ArticleRating extending Authored, Editable {
+    type ArticleRating {
+        required property updated_at -> datetime {
+            default := datetime_current();
+        };
         required property positive -> bool;
 
+        required link user -> User;
         required link article -> Article;
 
-        index on ((__subject__.author, __subject__.article));
+        index on ((__subject__.user, __subject__.article));
     }
 
-    type CommentRating extending Authored, Editable {
+    type CommentRating {
+        required property edited_at -> datetime {
+            default := datetime_current();
+        };
         required property positive -> bool;
 
+        required link user -> User;
         required link comment -> Comment;
 
-        index on ((__subject__.author, __subject__.comment));
+        index on ((__subject__.user, __subject__.comment));
     }
 
-    type Attachment extending Datable {
+    type Attachment {
         required property name -> str {
-            constraint max_len_value(256);
+            constraint max_len_value(2);
         };
 
         required property attachment_type -> attachment_type_enum;
-    }
 
-    scalar type qualified_name extending str {
-        constraint exclusive on (str_lower(__subject__));
-        constraint min_len_value(5);
-        constraint max_len_value(12);
-        constraint regexp(r'[a-zA-Z\d]([a-zA-Z\d]|-(?=[a-zA-Z\d])){3,11}');
+        required property created_at -> datetime {
+            default := datetime_current();
+            readonly := true;
+        };
     }
 
     scalar type article_state_enum extending enum<"draft", "hidden", "published">;
-
     scalar type attachment_type_enum extending enum<"file", "image", "video">;
 }
