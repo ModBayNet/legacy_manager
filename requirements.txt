@@ -9,7 +9,7 @@ async-timeout==3.0.1      # via aiohttp
 attrs==19.3.0             # via aiohttp
 certifi==2019.11.28       # via sentry-sdk
 chardet==3.0.4            # via aiohttp
-edgedb==0.7.0a9
+edgedb==0.7.1
 idna==2.8                 # via yarl
 multidict==4.7.4          # via aiohttp, yarl
 ruamel.yaml==0.16.6

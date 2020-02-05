@@ -27,7 +27,7 @@ class AccessLogger(AbstractAccessLogger):
         self.logger.info(
             f"{ip} '{req.headers.get('Referer', '-')}' "
             f"'{req.headers.get('User-Agent', '-')}' {req.method} {req.path} "
-            f"{resp.status} {round(time*1000)}ms"
+            f"{resp.status} {round(time * 1000)}ms"
         )
 
 
@@ -79,6 +79,9 @@ async def stop_app(app: web.Application) -> None:
     # os.kill(os.getpid(), signal.SIGTERM) will work, but this is dirty exit
     # without cleanup.
     # KeyboardInterrupt hack triggers cleanup in aiohttp and terminates app
+    #
+    # NOTE: this still triggers exception handling for some reason and it gets printed
+    # to logs and reported to Sentry
     raise KeyboardInterrupt
 
 
