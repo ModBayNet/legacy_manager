@@ -1,14 +1,29 @@
 module default {
+    # INTERNAL SCHEMA METADATA, DO NOT MODIFY
     type DB {
         required property schema_version -> int16;
     }
 
-    type User {
-        required property nickname -> str {
-            constraint exclusive;
-            constraint min_len_value(5);
-            constraint max_len_value(12);
-            constraint regexp(r'[a-zA-Z\d]([a-zA-Z\d]|-(?=[a-zA-Z\d])){3,11}');
+    # abstract types
+    abstract type Authored {
+        required link author -> User;
+    }
+
+    abstract type Datable {
+        required property created_at -> datetime {
+            default := datetime_current();
+            readonly := true;
+        };
+    }
+
+    abstract type Editable {
+        property edited_at -> datetime;
+    }
+
+    # types
+    type User extending Datable, Editable {
+        required property nickname -> qualified_name {
+            constraint exclusive on (str_lower(__subject__));
         };
 
         required property email -> str {
@@ -23,12 +38,6 @@ module default {
 
         required property password -> bytes;
         required property avatar -> str;
-        required property created_at -> datetime {
-            default := datetime_current();
-            readonly := true;
-        };
-
-        property edited_at -> datetime;
 
         property bio -> str;
 
@@ -40,15 +49,14 @@ module default {
             );
         };
 
-        index on (str_lower(__subject__.nickname));
         index on (__subject__.email);
     }
 
-    type GlobalRole {
-        required property name -> str {
-            constraint exclusive;
-            constraint max_len_value(12);
+    type GlobalRole extending Datable, Editable {
+        required property name -> qualified_name {
+            constraint exclusive on (str_lower(__subject__));
         };
+
         required property site_admin -> bool;
 
         required property can_like -> bool;
@@ -58,8 +66,7 @@ module default {
         required property can_edit_comments -> bool;
     }
 
-    # TODO: reason enum
-    type GlobalBan {
+    type GlobalBan extending Datable, Authored {
         required link user -> User;
 
         property comment -> str {
@@ -69,30 +76,16 @@ module default {
         required property until -> datetime;
     }
 
-    type Team {
-        required property name -> str {
-            constraint exclusive;
-            constraint min_len_value(5);
-            constraint max_len_value(12);
-            constraint regexp(r'[a-zA-Z\d]([a-zA-Z\d]|-(?=[a-zA-Z\d])){3,11}');
+    type Team extending Datable, Editable {
+        required property name -> qualified_name {
+            constraint exclusive on (str_lower(__subject__));
         };
-
         required property avatar -> str;
 
         multi link members -> User;
-
-        required property created_at -> datetime {
-            default := datetime_current();
-            readonly := true;
-        };
-
-        property edited_at -> datetime;
-
-        index on (str_lower(__subject__.name));
     }
 
-    type Comment {
-        required link author -> User;
+    type Comment extending Authored, Datable, Editable {
         required link article -> Article;
 
         link parent -> Comment;
@@ -113,8 +106,7 @@ module default {
     }
 
     # TODO: title, body
-    type Article {
-        link author -> User;
+    type Article extending Authored, Datable, Editable {
         link team -> Team;
 
         required property language -> str {
@@ -133,43 +125,42 @@ module default {
         };
     }
 
-    type ArticleRating {
-        required property updated_at -> datetime {
-            default := datetime_current();
-        };
+    type ArticleRating extending Authored, Editable {
         required property positive -> bool;
 
-        required link user -> User;
         required link article -> Article;
 
-        index on ((__subject__.user, __subject__.article));
+        index on ((__subject__.author, __subject__.article));
     }
 
-    type CommentRating {
-        required property edited_at -> datetime {
-            default := datetime_current();
-        };
+    type CommentRating extending Authored, Editable {
         required property positive -> bool;
 
-        required link user -> User;
         required link comment -> Comment;
 
-        index on ((__subject__.user, __subject__.comment));
+        index on ((__subject__.author, __subject__.comment));
     }
 
-    type Attachment {
+    type Attachment extending Datable {
         required property name -> str {
-            constraint max_len_value(2);
+            constraint max_len_value(256);
         };
 
         required property attachment_type -> attachment_type_enum;
+    }
+    # TODO: attachment subclasses: Image, Video, etc
 
-        required property created_at -> datetime {
-            default := datetime_current();
-            readonly := true;
-        };
+    # scalars
+    scalar type qualified_name extending str {
+        constraint min_len_value(5);
+        constraint max_len_value(12);
+        constraint regexp(r'[a-zA-Z\d]([a-zA-Z\d]|-(?=[a-zA-Z\d])){3,11}');
     }
 
+    # enums
     scalar type article_state_enum extending enum<"draft", "hidden", "published">;
+
     scalar type attachment_type_enum extending enum<"file", "image", "video">;
+
+    # TODO: ban reason enum
 }
