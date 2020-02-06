@@ -9,7 +9,10 @@ from .task import BaseTask
 from ..docker import Docker, DockerException
 
 # add class into this list to enable task
-__all__ = ("HTTPSupervisor",)
+__all__ = (
+    "HTTPSupervisor",
+    "DockerSupervisor",
+)
 
 log = logging.getLogger(__name__)
 
