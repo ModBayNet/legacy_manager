@@ -76,6 +76,7 @@ class Docker:
         params: Mapping[str, Any] = {},
         body: Any = None,
         registry_credentials: Mapping[str, Any] = {},
+        **kwargs: Any,
     ) -> Any:
         url = f"{self._url_base}{path}"
         log.info("%6s: %s", method, url)
@@ -87,7 +88,7 @@ class Docker:
             )
 
         async with self._session.request(
-            method, url, params=params, json=body, headers=headers
+            method, url, params=params, json=body, headers=headers, **kwargs
         ) as resp:
             if resp.status // 100 not in (2, 3):
                 decoded = await resp.json()
@@ -124,6 +125,14 @@ class Docker:
 
     async def restart(self, name: str) -> None:
         await self.request("POST", f"/containers/{name}/restart")
+
+    async def wait(self, name: str, condition: str = "not-running") -> None:
+        await self.request(
+            "POST",
+            f"/containers/{name}/wait",
+            params=dict(condition=condition),
+            timeout=None,
+        )
 
     async def close(self) -> None:
         await self._session.close()
