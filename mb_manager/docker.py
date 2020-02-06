@@ -23,6 +23,9 @@ class DockerException(Exception):
 
         super().__init__(msg)
 
+    def __str__(self) -> str:
+        return f"{self.status}: {self.args[0]}"
+
 
 class Docker:
     def __init__(

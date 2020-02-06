@@ -13,6 +13,7 @@ __all__ = ("HTTPSupervisor",)
 
 log = logging.getLogger(__name__)
 
+WORKER_IMAGE_NAME = "modbay1/worker"
 WORKER_CONTAINER_NAME = "modbay-worker.service"
 
 
@@ -46,18 +47,33 @@ class DockerSupervisor(BaseTask):
     async def setup(self, app: web.Application) -> None:
         await super().setup(app)
 
+        self._app = app
         self._docker: Docker = app["docker"]
 
     async def run_once(self) -> None:
+        image_missing = False
+
         try:
             await self._docker.wait(WORKER_CONTAINER_NAME, condition="removed")
         except DockerException as e:
             if e.status == 404:
-                log.warning("container does not exist, creating")
+                if "no such container" in str(e):
+                    log.warning("container does not exist, creating")
+                else:
+                    image_missing = True
             else:
                 log.exception("error waiting container")
 
         HTTPSupervisor.pause()
+        if image_missing:
+            log.warning("image does not exist, pulling and creating container")
+            await self._docker.pull(
+                f"{self._docker.registry_address}/{WORKER_IMAGE_NAME}",
+                registry_credentials=self._app["config"]["docker"]["registry"][
+                    "worker"
+                ],
+            )
+
         await self._create_container()
         HTTPSupervisor.unpause()
 

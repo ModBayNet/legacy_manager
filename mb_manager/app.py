@@ -14,9 +14,6 @@ log = logging.getLogger(__name__)
 
 SHUTDOWN_DELAY = 5
 
-# TODO: remove duplicate, do not hardcode this
-WORKER_DOCKER_IMAGE = "modbay1/worker"
-
 
 class AccessLogger(AbstractAccessLogger):
     def log(self, req: web.BaseRequest, resp: web.StreamResponse, time: float) -> None:
@@ -32,15 +29,6 @@ class AccessLogger(AbstractAccessLogger):
 
 
 async def on_startup(app: web.Application) -> None:
-    # ensure worker image is in place (systemd can't pull it because of gitlab deploy
-    # token limited scope)
-    docker = app["docker"]
-
-    await docker.pull(
-        f"{docker.registry_address}/{WORKER_DOCKER_IMAGE}",
-        registry_credentials=app["config"]["docker"]["registry"]["worker"],
-    )
-
     # since aiohttp runs handlers sequentially, edgedb connection should be created
     # before running migrations
     await migrate(app)
