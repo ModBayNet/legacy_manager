@@ -81,7 +81,8 @@ async def update_worker(req: web.Request) -> None:
     )
 
     try:
-        await docker.restart(WORKER_CONTAINER_NAME)
+        # container will be removed automatically and restarted by supervisor task
+        await docker.stop(WORKER_CONTAINER_NAME)
     except DockerException as e:
         if e.status != 404:
             raise

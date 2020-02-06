@@ -134,6 +134,11 @@ class Docker:
             timeout=None,
         )
 
+    async def stop(self, name: str, timeout: int = 15) -> None:
+        await self.request(
+            "POST", f"/containers/{name}/stop", params=dict(t=timeout),
+        )
+
     async def close(self) -> None:
         await self._session.close()
 
