@@ -6,6 +6,8 @@ import edgedb
 
 from aiohttp import web
 
+from .config import Config
+
 log = logging.getLogger(__name__)
 
 MIGRATIONS_FOLDER = "edgedb/migrations"
@@ -15,11 +17,11 @@ class MigrationError(Exception):
     pass
 
 
-def _fmt_version(version: int) -> str:
+def _fmt_db_version(version: int) -> str:
     return "[NEW]" if version == -1 else f"#{version:04}"
 
 
-class Migration:
+class EdgeDBMigration:
     def __init__(self, filename: str) -> None:
         self._filename = filename
 
@@ -32,27 +34,25 @@ class Migration:
         except ValueError:
             raise MigrationError(f"Bad version format in filename: {left_part}")
 
-    async def run(self, pool: edgedb.AsyncIOPool) -> None:
+    def run(self, conn: edgedb.BlockingIOConnection) -> None:
         with open(f"{MIGRATIONS_FOLDER}/{self._filename}") as f:
-            async with pool.acquire() as con:
-                try:
-                    async with con.transaction():
-                        await con.execute(f.read())
-                        await con.fetchall(
-                            "UPDATE DB SET { schema_version := <int16>$0 }",
-                            self.version,
-                        )
-                except Exception as e:
-                    raise MigrationError(f"Error running {self}: {e}")
+            try:
+                with conn.transaction():
+                    conn.execute(f.read())
+                    conn.fetchall(
+                        "UPDATE DB SET { schema_version := <int16>$0 }", self.version,
+                    )
+            except Exception as e:
+                raise MigrationError(f"Error running {self}: {e}")
 
     def __str__(self) -> str:
-        return _fmt_version(self.version)
+        return _fmt_db_version(self.version)
 
 
-async def migrate(app: web.Application) -> None:
-    await app["edgedb_ready"].wait()
+def _migrate_edgedb(config: Config) -> None:
+    conn = edgedb.connect(**config["edgedb"])
 
-    can_fetch_database_version = await app["edgedb"].fetchone(
+    can_fetch_database_version = conn.fetchone(
         """
         SELECT EXISTS (
             WITH MODULE schema
@@ -64,9 +64,7 @@ async def migrate(app: web.Application) -> None:
     )
 
     if can_fetch_database_version:
-        database_version = await app["edgedb"].fetchone(
-            "SELECT DB.schema_version LIMIT 1"
-        )
+        database_version = conn.fetchone("SELECT DB.schema_version LIMIT 1")
     else:
         database_version = -1
 
@@ -75,22 +73,22 @@ async def migrate(app: web.Application) -> None:
 
     if filenames:
         log.debug(
-            f"applying {len(filenames)} migrations to version {_fmt_version(database_version)}"
+            f"applying {len(filenames)} migrations to version {_fmt_db_version(database_version)}"
         )
     else:
-        log.debug(f"no new migrations from version {_fmt_version(database_version)}")
+        log.debug(f"no new migrations from version {_fmt_db_version(database_version)}")
 
         return
 
     try:
         for filename in filenames:
-            migration = Migration(filename)
+            migration = EdgeDBMigration(filename)
 
             log.info(
-                f"migrating {_fmt_version(database_version)} -> {migration} {migration.name}"
+                f"migrating {_fmt_db_version(database_version)} -> {migration} {migration.name}"
             )
 
-            await migration.run(app["edgedb"])
+            migration.run(conn)
 
             database_version += 1
     except MigrationError as e:
@@ -99,3 +97,7 @@ async def migrate(app: web.Application) -> None:
         sys.exit(1)
 
     log.info("finished migrations")
+
+
+def migrate(config: Config) -> None:
+    _migrate_edgedb(config)

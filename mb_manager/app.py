@@ -29,9 +29,7 @@ class AccessLogger(AbstractAccessLogger):
 
 
 async def on_startup(app: web.Application) -> None:
-    # since aiohttp runs handlers sequentially, edgedb connection should be created
-    # before running migrations
-    await migrate(app)
+    pass
 
 
 def init_app(app: web.Application) -> None:
@@ -74,6 +72,8 @@ async def stop_app(app: web.Application) -> None:
 
 
 def run_app(config: Config) -> None:
+    migrate(config)
+
     app = web.Application()
 
     app["config"] = config
