@@ -15,6 +15,10 @@ class Task(type):
     def __init__(cls: type, name: str, bases: Tuple[type, ...], dct: Dict[str, Any]):
         for base in cls.__mro__:
             if "interval" in base.__dict__:
+                # use -1 to disable task
+                if getattr(cls, "interval") == -1:
+                    return
+
                 instance = cls()
                 cls._instance = instance
                 cls._instances.add(instance)  # type: ignore
