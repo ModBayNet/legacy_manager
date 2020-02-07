@@ -60,7 +60,7 @@ class DockerSupervisor(BaseTask):
             await self._docker.wait(WORKER_CONTAINER_NAME, condition="removed")
         except DockerException as e:
             if e.status == 404:
-                if "no such container" in str(e):
+                if "no such container" in str(e).lower():
                     log.warning("container does not exist, creating")
                 else:
                     image_missing = True
