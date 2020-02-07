@@ -22,9 +22,12 @@ WORKER_CONTAINER_NAME = "modbay-worker.service"
 
 class HTTPSupervisor(BaseTask):
     interval = 60
+    alert_at = 2
 
     async def setup(self, app: web.Application) -> None:
         await super().setup(app)
+
+        self._streak = 0
 
         self._session = aiohttp.ClientSession()
 
@@ -37,11 +40,26 @@ class HTTPSupervisor(BaseTask):
         try:
             async with self._session.get(self._healthcheck_url) as r:
                 if r.status == 200:
+                    self._streak = 0
+
                     return
 
-                log.error(f"{r.method} {r.url}: {r.status}")
+                self.increase_streak()
+
+                if self._streak >= self.alert_at:
+                    log.error(f"{r.method} {r.url}: {r.status}")
         except aiohttp.ClientConnectionError:
-            log.exception("service unreachable")
+            self.increase_streak()
+
+            if self._streak >= self.alert_at:
+                log.exception("service unreachable")
+
+    def increase_streak(self) -> None:
+        """Used for Sentry breadcrumbs."""
+
+        self._streak += 1
+
+        log.warning(f"subsequent {self.__class__.__name__} fail streak: {self._streak}")
 
 
 class DockerSupervisor(BaseTask):
