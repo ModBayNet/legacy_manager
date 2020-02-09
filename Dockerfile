@@ -13,10 +13,17 @@ WORKDIR /code
 COPY requirements.txt .
 
 RUN apk add --no-cache --virtual build-deps \
+        git \
         gcc \
         make \
         musl-dev && \
     pip install -r requirements.txt && \
+    # aiohttp installation from source until 4.0.0a2
+    git clone https://github.com/aio-libs/aiohttp --depth 1 --recursive aiohttp && cd aiohttp && \
+    git submodule init && \
+    make cythonize && \
+    pip install . && \
+    cd .. && rm -rf aiohttp && \
     apk del build-deps
 
 EXPOSE 8081

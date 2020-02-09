@@ -1,4 +1,4 @@
-aiohttp
+#aiohttp==4.0.0a2
 ruamel.yaml
 sentry-sdk
 uvloop

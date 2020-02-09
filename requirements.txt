@@ -4,16 +4,9 @@
 #
 #    pip-compile --no-index --output-file=requirements.txt requirements.in
 #
-aiohttp==3.6.2
-async-timeout==3.0.1      # via aiohttp
-attrs==19.3.0             # via aiohttp
 certifi==2019.11.28       # via sentry-sdk
-chardet==3.0.4            # via aiohttp
 edgedb==0.7.1
-idna==2.8                 # via yarl
-multidict==4.7.4          # via aiohttp, yarl
 ruamel.yaml==0.16.6
 sentry-sdk==0.14.1
 urllib3==1.25.8           # via sentry-sdk
 uvloop==0.14.0
-yarl==1.4.2               # via aiohttp
