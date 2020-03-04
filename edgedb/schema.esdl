@@ -152,7 +152,7 @@ module default {
 
     # scalars
     scalar type qualified_name extending str {
-        constraint min_len_value(5);
+        constraint min_len_value(4);
         constraint max_len_value(12);
         constraint regexp(r'[a-zA-Z\d]([a-zA-Z\d]|-(?=[a-zA-Z\d])){3,11}');
     }
