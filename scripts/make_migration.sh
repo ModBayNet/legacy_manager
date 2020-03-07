@@ -50,4 +50,4 @@ COMMIT MIGRATION $migration_name;
 ### SCHEMA MIGRATION END ###
 EOF
 
-printf "Successfully created %s" "$new_file_name"
+printf "Successfully created %s\n" "$new_file_name"
