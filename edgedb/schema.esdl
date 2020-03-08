@@ -37,7 +37,7 @@ module default {
         };
 
         required property password -> bytes;
-        required property avatar -> str;
+        property avatar -> str;
 
         property bio -> str;
 
@@ -131,7 +131,7 @@ module default {
         required link article -> Article;
 
         index on ((__subject__.author, __subject__.article));
-    }
+  }
 
     type CommentRating extending Authored, Editable {
         required property positive -> bool;
@@ -149,6 +149,20 @@ module default {
         required property attachment_type -> attachment_type_enum;
     }
     # TODO: attachment subclasses: Image, Video, etc
+
+    type Session {
+        required link user -> User;
+
+        required property refresh_token -> str {
+            constraint exclusive;
+        }
+
+        required property client_id -> int64;
+        required property expires_at -> datetime;
+
+        required property ip -> str;
+        required property ua -> str;
+    }
 
     # scalars
     scalar type qualified_name extending str {
