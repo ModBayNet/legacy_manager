@@ -4,6 +4,7 @@ manager:
 
 supervisor:
   healthcheck_url: https://example.com/api/healthcheck
+  worker_container_name: modbay-worker.service
 
 docker:
   socket: /var/run/docker.sock

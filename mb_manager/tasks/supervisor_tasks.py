@@ -16,7 +16,6 @@ __all__ = (
 log = logging.getLogger(__name__)
 
 WORKER_IMAGE_NAME = "modbay1/worker"
-WORKER_CONTAINER_NAME = "modbay-worker.service"
 
 
 class HTTPSupervisor(BaseTask):
@@ -69,16 +68,19 @@ class DockerSupervisor(BaseTask):
 
         self._app = app
         self._docker: Docker = app["docker"]
+        self._container_name = app["config"]["supervisor"]["worker_container_name"]
 
     async def run_once(self) -> None:
         image_missing = False
 
         try:
-            await self._docker.wait(WORKER_CONTAINER_NAME, condition="removed")
+            await self._docker.wait(self._container_name, condition="removed")
         except DockerException as e:
             if e.status == 404:
                 if "no such container" in str(e).lower():
-                    log.warning("container does not exist, creating")
+                    log.warning(
+                        f"container {self._container_name} does not exist, creating"
+                    )
                 else:
                     image_missing = True
             else:
@@ -99,7 +101,7 @@ class DockerSupervisor(BaseTask):
 
     # TODO: move to Docker class
     async def _create_container(self) -> None:
-        create_params = {"name": WORKER_CONTAINER_NAME}
+        create_params = {"name": self._container_name}
         create_body = {
             "User": "root",  # TODO: do not use root?
             "Cmd": ("-v", "debug"),
@@ -117,5 +119,5 @@ class DockerSupervisor(BaseTask):
             "POST", "/containers/create", params=create_params, body=create_body
         )
         await self._docker.request(
-            "POST", f"/containers/{WORKER_CONTAINER_NAME}/start",
+            "POST", f"/containers/{self._container_name}/start",
         )
