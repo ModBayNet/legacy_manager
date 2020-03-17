@@ -30,12 +30,6 @@ EXPOSE 8081
 
 COPY . .
 
-RUN addgroup -S modbay && \
-    adduser -S modbay -G modbay && \
-    chown -R modbay:modbay /code
-
-USER modbay
-
 ARG GIT_COMMIT=undefined
 ENV GIT_COMMIT=${GIT_COMMIT}
 LABEL GIT_COMMIT=${GIT_COMMIT}
